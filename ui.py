@@ -1,6 +1,7 @@
 import tkinter as tk
 import lights
 from tkinter import font as tkFont
+from functools import partial
 
 #Function for toggle switches, var = tracked status of the light, light = light status from lights.py
 def toggle_switch(var, light, label_widget, bslider_widget, wslider_widget):
@@ -31,12 +32,65 @@ def brightness_slider(value, light):
 def warmth_slider(value, light):
     light.set_colourtemp(int(value))
 
+SELECTED_LIGHTS = []
+
+def select_lights(buttons, menu, lroom_state, office_state):
+    #loop through the buttons list, checking that the state of the button is True (it is selected), and its name to determine which lights to add
+    for button in buttons:
+        #office lights check state and add if selected
+        if office_state.get() == True and button._name == "office":
+            SELECTED_LIGHTS.append(lights.office1_light)
+            SELECTED_LIGHTS.append(lights.office2_light)
+            SELECTED_LIGHTS.append(lights.office3_light)
+        #living room lights check state and add if selected
+        if lroom_state.get() == True and button._name == "living room":
+            SELECTED_LIGHTS.append(lights.lroom1_light)
+            SELECTED_LIGHTS.append(lights.lroom2_light)
+            SELECTED_LIGHTS.append(lights.lroom3_light)
+            SELECTED_LIGHTS.append(lights.lroom4_light)
+    #destroy the pre_menu window
+    menu.destroy()
+    #Start the main app
+    main()
+
+def pre_menu():
+    menu = tk.Tk()
+    menu.title("Select lights to control")
+
+    frame = tk.Frame(master=menu)
+    frame.grid(row=0, column=0)
+
+    buttons = []
+    #Office lights
+    #boolean state to pass to the select_lights function, which can be used to check whether the checkbutton is ticked
+    office_state = tk.BooleanVar()
+    office_light_label = tk.Label(frame, text="Office lights")
+    office_light_label.grid(column=0, row= 0)
+    office_light_button = tk.Checkbutton(frame, variable=office_state, onvalue=True, offvalue=False, name="office")
+    office_light_button.grid(column=1, row = 0)
+    buttons.append(office_light_button)
+
+    #Living room lights
+    #boolean state to pass to the select_lights function, which can be used to check whether the checkbutton is ticked
+    lroom_state = tk.BooleanVar()
+    lroom_light_label = tk.Label(frame, text="Living Room Lights")
+    lroom_light_label.grid(column=0, row= 1)
+    lroom_light_button = tk.Checkbutton(frame, variable=lroom_state, onvalue=True, offvalue=False, name="living room")
+    lroom_light_button.grid(column=1, row = 1)
+    buttons.append(lroom_light_button)
+
+    #OK button to confirm choices and start select_lights function
+    ok_button = tk.Button(frame,text="OK", command=partial(select_lights, buttons, menu, lroom_state, office_state))
+    ok_button.grid(column=0, row=2, columnspan=2)
+
+    menu.mainloop()
 
 def main():
     #Check that all devices are connected, and add them to active lights list
     active_lights = []
 
-    for light in lights.light_list:
+    #for light in SELECTED_LIGHTS (the selected lights in pre_menu):
+    for light in SELECTED_LIGHTS:
         response = light.receive()
         if response is None:
             active_lights.append(light)
